@@ -15,18 +15,33 @@
 package main
 
 import (
+	"errors"
+	"os"
+	"syscall"
 	"unsafe"
 
 	api "github.com/inspektor-gadget/inspektor-gadget/wasmapi/go"
 )
 
-//export gadgetInit
-func gadgetInit() int {
+//go:wasmexport gadgetInit
+func gadgetInit() int32 {
 	return 0
 }
 
-//export gadgetStart
-func gadgetStart() int {
+func openFile() error {
+	filename := "/etc/hosts"
+	flag := syscall.O_RDONLY
+	perm := uint32(0)
+	fd, err := syscall.Open(filename, flag, perm)
+	if err != nil {
+		return err
+	}
+	defer syscall.Close(fd)
+	return nil
+}
+
+//go:wasmexport gadgetStart
+func gadgetStart() int32 {
 	type event struct {
 		a      uint32
 		b      uint32
@@ -60,12 +75,24 @@ func gadgetStart() int {
 		return 1
 	}
 
-	buf, err := perfReader.Read()
+	maxRetries := 3
+	var buf []byte
+	for i := 0; i <= maxRetries; i++ {
+		// open a file to trigger "open" syscall hooks
+		if err = openFile(); err != nil {
+			api.Errorf("opening file")
+			return 1
+		}
+		buf, err = perfReader.Read()
+		// if met epoll wait i/o timeout, retry
+		if !errors.Is(err, os.ErrDeadlineExceeded) {
+			break
+		}
+	}
 	if err != nil {
 		api.Errorf("reading perf record")
 		return 1
 	}
-
 	if buf == nil {
 		api.Errorf("buffer should not be nil")
 		return 1
