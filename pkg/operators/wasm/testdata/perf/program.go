@@ -15,18 +15,20 @@
 package main
 
 import (
+	"errors"
+	"os"
 	"unsafe"
 
 	api "github.com/inspektor-gadget/inspektor-gadget/wasmapi/go"
 )
 
-//export gadgetInit
-func gadgetInit() int {
+//go:wasmexport gadgetInit
+func gadgetInit() int32 {
 	return 0
 }
 
-//export gadgetStart
-func gadgetStart() int {
+//go:wasmexport gadgetStart
+func gadgetStart() int32 {
 	type event struct {
 		a      uint32
 		b      uint32
@@ -60,12 +62,19 @@ func gadgetStart() int {
 		return 1
 	}
 
-	buf, err := perfReader.Read()
+	maxRetries := 3
+	var buf []byte
+	for i := 0; i <= maxRetries; i++ {
+		buf, err = perfReader.Read()
+		// if met epoll wait i/o timeout, retry
+		if !errors.Is(err, os.ErrDeadlineExceeded) {
+			break
+		}
+	}
 	if err != nil {
 		api.Errorf("reading perf record")
 		return 1
 	}
-
 	if buf == nil {
 		api.Errorf("buffer should not be nil")
 		return 1
