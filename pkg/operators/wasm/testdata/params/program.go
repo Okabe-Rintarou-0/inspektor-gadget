@@ -22,8 +22,8 @@ import (
 	api "github.com/inspektor-gadget/inspektor-gadget/wasmapi/go"
 )
 
-//export gadgetStart
-func gadgetStart() int {
+//go:wasmexport gadgetStart
+func gadgetStart() int32 {
 	val, err := api.GetParamValue("param-key")
 	if err != nil {
 		api.Errorf("failed to get param: %v", err)
@@ -38,7 +38,7 @@ func gadgetStart() int {
 
 	_, err = api.GetParamValue("non-existing-param")
 	if err == nil {
-		api.Errorf("looking for non-existing-param succeded")
+		api.Errorf("looking for non-existing-param succeeded")
 		return 1
 	}
 

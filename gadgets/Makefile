@@ -5,12 +5,12 @@ ROOT_DIR:=$(dir $(realpath $(firstword $(MAKEFILE_LIST))))
 GADGET_TAG ?= $(shell ../tools/image-tag branch)
 GADGET_REPOSITORY ?= ghcr.io/inspektor-gadget/gadget
 BUILDER_IMAGE ?= ghcr.io/inspektor-gadget/ebpf-builder:latest
-# currently use mauriciovasquezbernal/ci-kernels as default
-KERNEL_REPOSITORY ?= ghcr.io/mauriciovasquezbernal/ci-kernels
+KERNEL_REPOSITORY ?= ghcr.io/inspektor-gadget/ci-kernels
 IG ?= ig
 KUBECTL_GADGET ?= kubectl-gadget
 IG_RUNTIME ?= docker
 IG_FLAGS ?=
+IG_DEBUG_LOGS ?= true
 COSIGN ?= cosign
 VIMTO ?= vimto
 VIMTO_VM_MEMORY ?= 4096M
@@ -137,6 +137,7 @@ pull:
 .PHONY:
 test-unit: build
 	IG_VERIFY_IMAGE=$(IG_VERIFY_IMAGE) \
+	IG_DEBUG_LOGS=$(IG_DEBUG_LOGS) \
 	GADGET_TAG=$(GADGET_TAG) \
 	GADGET_REPOSITORY=$(GADGET_REPOSITORY) \
 	VIMTO=$(VIMTO) \
@@ -149,6 +150,7 @@ test-unit: build
 .PHONY:
 %/test-unit: %
 	IG_VERIFY_IMAGE=$(IG_VERIFY_IMAGE) \
+	IG_DEBUG_LOGS=$(IG_DEBUG_LOGS) \
 	GADGET_TAG=$(GADGET_TAG) \
 	GADGET_REPOSITORY=$(GADGET_REPOSITORY) \
 	VIMTO=$(VIMTO) \

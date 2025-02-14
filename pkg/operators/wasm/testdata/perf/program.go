@@ -20,13 +20,13 @@ import (
 	api "github.com/inspektor-gadget/inspektor-gadget/wasmapi/go"
 )
 
-//export gadgetInit
-func gadgetInit() int {
+//go:wasmexport gadgetInit
+func gadgetInit() int32 {
 	return 0
 }
 
-//export gadgetStart
-func gadgetStart() int {
+//go:wasmexport gadgetStart
+func gadgetStart() int32 {
 	type event struct {
 		a      uint32
 		b      uint32
@@ -52,6 +52,11 @@ func gadgetStart() int {
 	if err == nil {
 		api.Errorf("perf over writable reader must be paused before reading")
 		return 1
+	}
+
+	for range 10 {
+		// Let's generate some events by calling indirectly the write() syscall.
+		api.Infof("testing perf array")
 	}
 
 	err = perfReader.Pause()
